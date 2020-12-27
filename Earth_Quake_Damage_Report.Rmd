@@ -1,0 +1,37 @@
+---
+title: "Eartquake_Damage_Predictor"
+author: "Muhammad Ali"
+date: "26/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+The goal of this project is to predict damage on buildings during the Gorkha earthquake in Nepal. A model was constructed using a dataset from drivendata, an organization that provides prediction ready datasets. First an analysis of the dataset for insight was performed. The outcome of this stage case two new datasets, a filtered dataset (with less predictors) and an expanded dataset (with more predictors). Models of three different classes (linear, tree based and support vector machines) were built using the three datasets. Finally the model with the greatest accuracy was picked. 
+
+# 
+# Conclusion
+With the urban sprawl occurring throughout the world, institutions need a great infrastructure planning. One such way is to plan for the damage on buildings from earthquakes. Hence several models from three different model classes (linear, tree and support vectors) were constructed to predict effect on building damage of an earthquake the size of Gorkha. 
+
+Although the dataset was already in a format that facilitated the creation of good models, further datasets were created. One of them being a filtered dataset (with fewer features then the original) and the other being a dataset with more features then the original. The same models were developed for all three dataset, and the final model was selected based on the accuracy of the validation set. 
+
+This model has the potential to impact institutions around the world, helping them predict the impact of earthquake damage on buildings. In the future, modelling with greater computational resources, and using more powerful models, such as neural networks. Furthermore, the results of variable importance from tree models, such as random forests, could be used to remove certain unimportant features from the dataset. The limitations of this work is certainly the final accuracy, which is not significantly greater then the accuracy is a base model, that constantly predicted level 2 building damage. Another limitation of this project is the lack of cross validation, which should have been used instead of using an isolated holdout validation set. 
+
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
