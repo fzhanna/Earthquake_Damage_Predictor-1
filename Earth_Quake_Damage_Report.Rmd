@@ -36,13 +36,14 @@ train <- loadRaw$trainVal()
 head(train)
 ```
 
-# Methods and Analysis
+# An Important Note about the Code
+Rather then using a single script, the project was broken into modules. Hence the code may be hard to follow since it calls function from other modules. For a better understanding of the module organization, please see the git repo available at https://github.com/icecap360/Earthquake_Damage_Predictor. Furthermore instead of RStudio, Jupyter Notebooks were used, which facilitated data exploration and model creation.
 
-Rather then using a single script, the project was broken into modules. Hence the code may be hard to follow since it calls function from other modules. the It is however available at https://github.com/icecap360/Earthquake_Damage_Predictor. Furthermore instead of RStudio, Jupyter Notebooks were used, so the output of the code is also available. 
+# Methods and Analysis
 
 ## Prior Research
 
-The internet was consulted for expert opinions on what causes building damage during an earthquake. Surprisingly the use of the building, and the number of levels of the building were not important factors in determining building damage. Instead building foundation and material are of greater relevence. Specifically wood and steel are better then concrete. The primary reason for these guidelines is because researchers found that flexibility is a very important factor for a building to successfully survive an earthquake. 
+The internet was consulted for expert opinions on what causes building damage during an earthquake. Surprisingly the use of the building, and the number of levels of the building were not important factors in determining building damage. Instead building foundation and material are of greater relevence. Specifically buildings made of wood and steel on solid bedrock are better then buildings made on concrete on loose ground. The primary reason for these guidelines is because researchers found that flexibility is a very important factor for a building to successfully survive an earthquake. 
 
 ## Initial Preprocessing
 The dataset is quite large, over 25MB with over 260k training samples. The data came in a format where it was ready to be processed. For example there were no missing values. The training set was split into training and validation (which will be used only for error estimation). Test data without labels was supplied from the organization, and will be used for final error evaluation. 
@@ -60,7 +61,7 @@ labels <- loadNF$factor()[[2]] #num and factor features have the same labels
 numTrain <- manipulate$combineLab(numTrain, labels)
 factorTrain <- manipulate$combineLab(factorTrain, labels)
 ```
-First the numerical variables were analysed. Furthermore the label, which is an ordinal factor, was treated as an integer so that correlations could be calculated with it. Note that the corrplot because of so many features may not be clearly visible, please the the Analysis.ipnyb file in the git repo for the full plot. 
+First the numerical variables were analysed. The label, which is an ordinal factor, was treated as an integer so that correlations could be calculated with it. Note that the corrplot because of so many features may not be clearly visible, please see the Analysis.ipnyb file in the git repo for the full plot. 
 ```{r corrs, echo=FALSE}
 corNumTrain <- cor(numTrain)
 cat('\n Features that show greatest corrrlation with each other \n \n')
@@ -84,16 +85,17 @@ cat(releventFeat)
 * Building height and area are heavily correlated. 
 * has_superstructure_mud_mortar_brick , has_superstructure_mud_mortar_stone , has_superstructure_adobe_mud ; these 3 variables correlate very heavily. 
 * A building that is used for agriculture or as a hotel has high chance of having a secondary use. Probably because these buildings have different seasonal uses. 
+* Overall there is very little correlation between the variables. 
 
 #### Key findings with regard to label:
-* The more floors a home has the more likely it is to be damaged. This goes against the conventional belief that morefloors means greater.  flexibility/greater safety. 
+* The more floors a home has the more likely it is to be damaged. This goes against the conventional belief that more floors means greater flexibility/greater safety. 
 * The more area a home has the safer it is
-* Superstructure is a valuable variable, it shows that rc, mud mortar stone and cement mortar correlate heavily with label
-* None of the features that had to do with building purpose/use were helpful in determing the label. 
+* Superstructure is a valuable variable, it shows that reinforced concrete, mud mortar stone and cement mortar correlate heavily with label
+* None of the features that had to do with building purpose/use correlated with the label. 
 * Having a cement mortar and mud mortar are significantly different, as such should be seperate variables. 
 
 
-Next the distribution of numerical features was conducted. 
+Next the distribution of numerical features was analysed, please read the chart titles for the anslysis. 
 ```{r distnum, echo=FALSE}
 cat('Note that the odd shape is because floors is discrete')
 numTrain %>% ggplot(aes(count_floors_pre_eq)) +
@@ -106,7 +108,7 @@ cat('Note that the odd shape is because families is discrete')
 numTrain %>% ggplot(aes(count_families)) + geom_density(fill = 'red',alpha=0.8, adjust=2) +  ggtitle('Family follows a normal distribution')
 ```
 
-Next binary features were analysed. First the binary features were extracted from the numeric dataframe, before analysis was conducted.
+Next binary features were analysed. First the binary features were extracted from the numeric dataframe.
 ```{r bnextr}
 binaryFeat <- apply(numTrain,2,function(x) { all(x %in% 0:1) })
 binTrain <- numTrain[,binaryFeat]
@@ -117,7 +119,7 @@ cat('How many distinct buildings have these features?')
 apply(binTrain, 2, sum)
 ```
 
-Another question about the binary variables is how exclusive are they. How often is a building a member of two distinct binary features. Within the binary variables, they are fairly exclusive. In other words a building is not very likely to be of 2 categories. Hence the formulas of the models need not investigate interaction between binary variables, as any relationship found will be among very few data samples. 
+Another question about the binary variables is how exclusive and independent are they? How often is a building a member of two distinct binary features? For each pair of variables,  percentage of buildings that had both features was calculated, and then plotted on a histogram. The histogram shows that the majority of interactions (300) occur 0% of the time. Hence the binary variables are fairly exclusive. In other words a building is not very likely to be of 2 categories. Hence the formulas of the models need not investigate interaction between binary variables, as any relationship found will be among very few data samples. 
 ```{r intbin, echo=FALSE}
 #Investigating the interaction between binary features
 nbin <- ncol(binTrain)
@@ -173,7 +175,7 @@ Which binary features had great influence on the label? Looking at the graphs, t
 * has_secondary_use_industry
 * has_secondary_use_gov_office
 
-Finally, factor variables are analyzed. In order to determine if a factor has an effect on the label damage_grade (another factor), tables were used. The first table is a frequency table of the factor variable, showing which levels within a factor are common and which are rare. The second table is a frequency table between the factor and the label damage_grade but with the marginal (as a percentage) calculated along the columns. This helps determine the distribution of the factor among the same damage_grade level. A helpful feature should show different distribution of percentages for the feature, among each column. The thirs table is similar to the second, except that it calculates the marginals along the road. This table helps determine the distribution of damage_grade among the same feature value. A helpful feature should hav a different distribution of damage_grade among each row (each distinct feature value).  
+Finally, factor variables are analyzed. In order to determine if a factor has an effect on the label damage_grade (another factor), tables were used. The first table is a frequency table of the factor variable, showing which levels within a factor are common and which are rare. The second table is a frequency table between the factor and the label damage_grade but with the marginal (as a percentage) calculated along the columns. This helps determine the distribution of the factor among the same damage_grade level. A feature is helpful if its levels shows a different distribution of percentages for each distinct label level (i.e. each column). The third table is similar to the second, except that it calculates the marginals along the rows. This table helps determine the distribution of damage_grade among the same feature value. A helpful feature should have a different distribution of damage_grade for each distinct feature value (i.e. for each row)).  
 
 
 ```{r facanl}
@@ -247,7 +249,7 @@ In total 3 datasets were constructed. One being the orignal dataset.
 ```{r ogdat}
 saveData(train, trainLab, val, valLab, test, 'original')
 ```
-One being a filtered dataset, which removes al features except those deemed relevent by the analysis:
+One being a filtered dataset, which removes al features except those deemed relevent by the Analysis section. For example many of the building use variables are removed (because they showed little correlation with label and research said they were unimportant). :
 ```{r fildat}
 featureEngineerRemove <- function(data) {
     newLevel <- "other"
@@ -268,7 +270,7 @@ featureEngineerRemove <- function(data) {
 }
 saveData(featureEngineerRemove(train), trainLab, featureEngineerRemove(val), valLab, featureEngineerRemove(test), 'filtered')
 ```
-One being the expanded dataset, which contains features extracted from the dataset.
+One being the expanded dataset, which contains features extracted from the dataset that may be helpful. For example a binary feature was added for all buildings that had any form of concrete in them. 
 ```{r expdat}
 featureEngineerAdd <- function(data) {
     data$has_superstructure_tree = 
@@ -291,8 +293,8 @@ saveData(featureEngineerAdd(train), trainLab,
          featureEngineerAdd(val), valLab, featureEngineerAdd(test), 'expanded')
 ```
 ## Models
-As previously stated, 3 different training datasets were constructed, one called 'original', other called 'filtered', and the other called 'expanded'. However model creation code is identical for all 3 datasets. Here only the original dataset is loaded and analyzed. To analyze other datasets simply comment  the other datasets are similar.
-```{r lddatmod}
+As previously stated, 3 different training datasets were constructed, one called 'original', other called 'filtered', and the other called 'expanded'. However model creation code is identical for all 3 datasets. Here only the original dataset is loaded and analyzed. To analyze other datasets simply comment and uncomment the data selection line appropiately (the code below selects the dataset). Note that for the purposes of this report, none of code in the model testing phase is evaluated/run, due to computational considerations.
+```{r lddatmod, eval=FALSE}
 #currently analyzing the original dataset
 train <- loadFin$original()[[1]]
 trainLab <- loadFin$original()[[2]]
@@ -310,8 +312,8 @@ test <- loadFin$original()[[5]]
 #valLab <- loadFin$expanded()[[4]]
 #test <- loadFin$expanded()[[5]]
 ```
-Some further datasets formed and processed
-```{r furthpreprocs}
+Some further proprocessing occurs, along with the creation of a \'Full\' dataset, which joins the values and the labels.
+```{r furthpreprocs, eval=FALSE}
 #when R reads the csv, it thinks damage_grade is an integer, so convert it back to a factor
 trainLab$damage_grade <- as.factor(trainLab$damage_grade)
 valLab$damage_grade <- as.factor(valLab$damage_grade)
@@ -332,7 +334,7 @@ trainFull$building_id <- NULL
 valFull$building_id <- NULL
 ```
 First we construct linear models. One such model is the linear discriminant analysis (LDA).
-```{r modlda}
+```{r modlda, eval=FALSE}
 model.LDA <- lda(as.factor(damage_grade)~., data = trainFull)
 predictionsVal <- predict(model.LDA, valFull)
 accuracy <- mean(predictionsVal$class == valFull$damage_grade)
@@ -340,7 +342,6 @@ cat('Accuracy for the LDA was ', accuracy)
 ```
 The second class of models is tree models, one such model is the random forests.
 ``` {r randforestmod}
-
 createRandomForest <- function(mtry_, ntree_, trainFull, valFull){
     model.RF <- randomForest(as.factor(damage_grade) ~ ., data=trainFull, ntree=ntree_, mtry=mtry_, importance=TRUE)
     #dput(list(model.RF$confusion, modelRF$oob.times, modelRF$, "Models/Random_Forest_Output.txt")
@@ -358,23 +359,45 @@ createRandomForest <- function(mtry_, ntree_, trainFull, valFull){
     print(subset ( imp[order(-imp$MeanDecreaseGini),] ,select=MeanDecreaseGini))
 }
 ```
-To tune the parameter values, 5 different pairs of mtry and ntree values are created (this is all that computational resources permitted). How the models are tested and the final model creation are commented out due to limited computational resources. 
-```{r tunerfmod}
+To tune the parameter values, 5 different pairs of mtry and ntree values are created (this is all that computational resources permitted). Due to limited computational resources, the following code is not run here in the report. 
+```{r tunerfmod, eval=FALSE}
 mtry <- c(5,10,15,20,25)
 ntree <- c(80,70,60,50,40) 
 cat('Try all 5 pairs, inspect the console for the model that gives the best accuracy.')
-#createRandomForest(mtry[1],ntree[1], trainFull, valFull)
-#createRandomForest(mtry[2],ntree[2], #trainFull, valFull)
-#createRandomForest(mtry[3],ntree[3], #trainFull, valFull)
-#createRandomForest(mtry[4],ntree[4], #trainFull, valFull)
-#createRandomForest(mtry[5],ntree[5], trainFull, valFull)
+createRandomForest(mtry[1],ntree[1], trainFull, valFull)
+createRandomForest(mtry[2],ntree[2], trainFull, valFull)
+createRandomForest(mtry[3],ntree[3], trainFull, valFull)
+createRandomForest(mtry[4],ntree[4], trainFull, valFull)
+createRandomForest(mtry[5],ntree[5], trainFull, valFull)
 
 ```
-```{r finrfm}
+The best model using the original dataset (based on accuracy) is reconstruced, but this time trained on the training and the validation set. Afterward the prediction helper function is used to store the predictions of this model.  
+```{r finrfm, eval=FALSE}
 cat('The best model for the original dataset was the first parmeter pair')
 model.RF <- randomForest(as.factor(damage_grade) ~ ., data=rbind(trainFull,valFull), ntree=ntree[2], mtry=mtry[2], importance=FALSE)
 savePredictions(model.RF)
 ```
+
+## Results
+
+The metric used for model evaluation was accuracy, which is calculated as the proportion of times the model predicted correctly. The accuracy was displayed for each model (in the code cell outputs). Visually inspecting, the greatest accuracy was acheived by the random forests construsted from the filtered dataset. Again the code is not run due to the time it takes.  
+```{r rffinm, eval=FALSE}
+loadFin<- modules::use('Helpers/Load_Final_Data.R')
+train <- loadFin$filtered()[[1]]
+trainLab <- loadFin$filtered()[[2]]
+val <- loadFin$filtered()[[3]]
+valLab <- loadFin$filtered()[[4]]
+test <- loadFin$filtered()[[5]]
+#when R reads the csv, it thinks damage_grade is an integer, so convert it back to a factor
+trainLab$damage_grade <- as.factor(trainLab$damage_grade)
+valLab$damage_grade <- as.factor(valLab$damage_grade)
+manipulate<- modules::use('Helpers/Manipulate.R')
+trainFull <- manipulate$combineLab(train, trainLab)
+valFull <- manipulate$combineLab(val, valLab)
+model.RF <- randomForest(as.factor(damage_grade) ~ ., data=rbind(trainFull,valFull), ntree=70, mtry=10, importance=FALSE)
+```
+The predictions of the final model on the test dataset were submitted to the driven data, the accuracy and ranking this model acheived is shown below. 
+![Final model ranking in the world.](Final_Ranking.png)
 
 # Conclusion
 With the urban sprawl occurring throughout the world, institutions need a great infrastructure planning. One such way is to plan for the damage on buildings from earthquakes. Hence several models from two different model classes (linear and tree based) were constructed to predict effect on building damage of an earthquake the size of Gorkha. 
