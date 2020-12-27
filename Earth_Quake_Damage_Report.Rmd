@@ -2,7 +2,9 @@
 title: "Eartquake_Damage_Predictor"
 author: "Muhammad Ali"
 date: "26/12/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,12 +12,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Introduction
-The goal of this project is to predict damage on buildings during the Gorkha earthquake in Nepal. A model was constructed using a dataset from drivendata, an organization that provides prediction ready datasets. First an analysis of the dataset for insight was performed. The outcome of this stage case two new datasets, a filtered dataset (with less predictors) and an expanded dataset (with more predictors). Models of two different classes (linear and tree based) were built using the three datasets. Finally the model with the greatest accuracy was picked. 
+The goal of this project is to predict damage on buildings during the Gorkha earthquake in Nepal. A model was constructed using a dataset provided by drivendata First an analysis of the dataset for insight was performed. The outcome of this stage case two new datasets, a filtered dataset (with less predictors) and an expanded dataset (with more predictors). Models of two different classes (linear and tree based) were built using the three datasets. Finally the model with the greatest accuracy was selected, retrained on the entire dataset, and had its performance analysed by submitting its predictions on an unseen testdataset. The model was successful because it ranked in the top 11% of all models created for this problem. 
 
 ## Dataset
-The label for this dataset was damage_grade, which is a three level factor variable representing the damage the building received. One represented low damage, two represents medium damage, and three represents complete damage. 
+The label for this dataset was damage_grade, which is a three level factor variable representing the damage the building received. A level of \'1\' represented low damage, \'2\' represents medium damage, and \'3\' represents complete damage. 
 
-For each building in the dataset, there were 39 features. Three of them had to do with the geographic region in which building exists. The numeric variables included the number of floors, number of families in the building, age, area percentage, height percentage. The categorical variables included foundation_type, roof_type, ground_floor_type, other_floor_type, position, and plan_configuration. What is important to note is that the factor variables have there names assigned randomly. Hence the actual levels are meaningless, the only thing one can tell from the data is if two building are of the same or different factor level. For example legal ownership has levels a,r,v, and w. But none of a,r,v, or w have any 
+For each building in the dataset, there were 39 features. Three of them had to do with the geographic region in which building exists. The numeric variables included the number of floors, number of families in the building, age, area percentage, height percentage. The categorical variables included foundation type, roof type, ground floor type, other floor type, position, and plan configuration. What is important to note is that the factor variables have there names assigned randomly. Hence the actual levels are meaningless, the only thing one can tell from the data is if two building are of the same or different factor level. For example legal ownership has levels a,r,v, and w. But none of a,r,v, or w have any 
 meaning with legal ownership. 
 
 There were then 11 binary variables that had to the material of the building superstructure. Superstructure is basically the part of the building where people will spend most of there time, so it includes  beams, columns, finishes and doors.  There are 11 other binary variables that had to do with the secondary use of the building, such as if it was used as a school, police office, hotel, industry, etc. 
@@ -114,6 +116,7 @@ binaryFeat <- apply(numTrain,2,function(x) { all(x %in% 0:1) })
 binTrain <- numTrain[,binaryFeat]
 head(binTrain)
 ```
+The first question is how common is it for buildings to have one of these binary features.
 ```{r binanal, echo=FALSE}
 cat('How many distinct buildings have these features?')
 apply(binTrain, 2, sum)
@@ -161,8 +164,11 @@ plotBinLab(1,8, nameBin2, binTrain2)
 plotBinLab(9,16, nameBin2, binTrain2)
 plotBinLab(17,22, nameBin2, binTrain2)
 ```
+
 #### Key Points
+
 Which binary features had great influence on the label? Looking at the graphs, the answer is:
+
 * has_superstructure_stone_flag
 * has_superstructure_cement_mortar_stone
 * has_superstructure_cement_mortar_brick
@@ -249,14 +255,14 @@ In total 3 datasets were constructed. One being the orignal dataset.
 ```{r ogdat}
 saveData(train, trainLab, val, valLab, test, 'original')
 ```
-One being a filtered dataset, which removes al features except those deemed relevent by the Analysis section. For example many of the building use variables are removed (because they showed little correlation with label and research said they were unimportant). :
+One being a filtered dataset, which removes al features except those deemed relevent by the Analysis section. For example many of the building use variables are removed (because they showed little correlation with label and research said they were unimportant).
 ```{r fildat}
 featureEngineerRemove <- function(data) {
     newLevel <- "other"
     #according to analysis, combine levels that were strikingly similar
     data$foundation_type <- plyr::revalue(data$foundation_type, c("u"=newLevel, "w"=newLevel))
     data$roof_type <- plyr::revalue(data$roof_type, c("n"=newLevel, "q"=newLevel))    
-    data %>% select(
+    return(subset(data,select= c(
         #first add all binary/categorical features that were found to be effective in the analysis stage
                     foundation_type , roof_type , ground_floor_type, other_floor_type, legal_ownership_status, 
                    has_superstructure_stone_flag, has_superstructure_cement_mortar_stone, 
@@ -266,7 +272,7 @@ featureEngineerRemove <- function(data) {
                     plan_configuration,
         #now add all other features that were considered relevent according to research conducted on the internet
                     geo_level_1_id, geo_level_2_id, geo_level_3_id, count_floors_pre_eq, age, 
-                    area_percentage, height_percentage, land_surface_condition, count_families, building_id) %>% return()
+                    area_percentage, height_percentage, land_surface_condition, count_families, building_id)))
 }
 saveData(featureEngineerRemove(train), trainLab, featureEngineerRemove(val), valLab, featureEngineerRemove(test), 'filtered')
 ```
@@ -296,6 +302,7 @@ saveData(featureEngineerAdd(train), trainLab,
 As previously stated, 3 different training datasets were constructed, one called 'original', other called 'filtered', and the other called 'expanded'. However model creation code is identical for all 3 datasets. Here only the original dataset is loaded and analyzed. To analyze other datasets simply comment and uncomment the data selection line appropiately (the code below selects the dataset). Note that for the purposes of this report, none of code in the model testing phase is evaluated/run, due to computational considerations.
 ```{r lddatmod, eval=FALSE}
 #currently analyzing the original dataset
+loadFin<- modules::use('Helpers/Load_Final_Data.R')
 train <- loadFin$original()[[1]]
 trainLab <- loadFin$original()[[2]]
 val <- loadFin$original()[[3]]
@@ -323,7 +330,7 @@ trainFull <- manipulate$combineLab(train, trainLab)
 valFull <- manipulate$combineLab(val, valLab)
 ```
 A saving predictions helper function is now constructed.
-```{r savepred}
+```{r savepred, eval=FALSE}
 #saving predictions helper function
 savePredictions <- function(model) {
     preds <- cbind(test$building_id, predict(model, subset(test, select=-c(building_id))))
@@ -380,7 +387,7 @@ savePredictions(model.RF)
 
 ## Results
 
-The metric used for model evaluation was accuracy, which is calculated as the proportion of times the model predicted correctly. The accuracy was displayed for each model (in the code cell outputs). Visually inspecting, the greatest accuracy was acheived by the random forests construsted from the filtered dataset. Again the code is not run due to the time it takes.  
+The metric used for model evaluation was accuracy, which is calculated as the proportion of times the model predicted correctly. The accuracy was displayed for each model (in the code cell outputs). Visually inspecting, the greatest accuracy was acheived by the random forests construsted from the filtered dataset. That model is reconstructed in the code below. Again the code is not run due to the time it takes. Looking at the variable importance given from the random forest, it is clear that all of the geographic variables were helpful. Also building use as predicted was not especially helpful. Surprisingly superstructure material was not very helpful either, it was however better then building use features. 
 ```{r rffinm, eval=FALSE}
 loadFin<- modules::use('Helpers/Load_Final_Data.R')
 train <- loadFin$filtered()[[1]]
@@ -396,12 +403,13 @@ trainFull <- manipulate$combineLab(train, trainLab)
 valFull <- manipulate$combineLab(val, valLab)
 model.RF <- randomForest(as.factor(damage_grade) ~ ., data=rbind(trainFull,valFull), ntree=70, mtry=10, importance=FALSE)
 ```
-The predictions of the final model on the test dataset were submitted to the driven data, the accuracy and ranking this model acheived is shown below. 
+The predictions of the final model on the test dataset were submitted to the driven data, the accuracy and ranking this model acheived is shown below. The model was successful because it ranked the top 11% (388th position out of over 3635) of all models created for this problem, which is a high ranking.
+
 ![Final model ranking in the world.](Final_Ranking.png)
 
 # Conclusion
 With the urban sprawl occurring throughout the world, institutions need a great infrastructure planning. One such way is to plan for the damage on buildings from earthquakes. Hence several models from two different model classes (linear and tree based) were constructed to predict effect on building damage of an earthquake the size of Gorkha. 
 
-Although the dataset was already in a format that facilitated the creation of good models, further datasets were created. One of them being a filtered dataset (with fewer features then the original) and the other being a dataset with more features then the original. The same models were developed for all three dataset, and the final model was selected based on the accuracy of the validation set. 
+Although the dataset was already in a format that facilitated the creation of good models, further datasets were created. One of them being a filtered dataset (with fewer features then the original) and the other being a dataset with more features then the original. The same models were developed for all three dataset, and the final model was selected based on the accuracy of the validation set. The final model was a random forest trained on the filtered datasets. The model was successful, because it had great performance (high accuracy) on the testset (model ranked in the top 11%). 
 
 This model has the potential to impact institutions around the world, helping them predict the impact of earthquake damage on buildings. In the future, modelling with greater computational resources, and using more powerful models, such as neural networks and support vector machines. Furthermore, the results of variable importance from tree models, such as random forests, could be used to remove certain unimportant features from the dataset. The limitations of this work is certainly the final accuracy, which is not significantly greater then the accuracy is a base model, that constantly predicted level 2 building damage. Another limitation of this project is the lack of cross validation, which should have been used instead of using an isolated holdout validation set. 
