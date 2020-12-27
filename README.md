@@ -1,6 +1,6 @@
 # Earthquake Damage Predictor
 
-A data science contest, where we predict the damage caused by an earthquake on various structures.
+A data science contest, where we predict the damage caused by an earthquake on various structures. It is also one of the capstone project I submitted for the HarvardX Data Science certificate. 
 
 
 This project consists of various R notebooks (broken into modules) and a pdf summary report was created using RMarkdown (see the Reports directory for details). 
